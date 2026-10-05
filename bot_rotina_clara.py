@@ -92,6 +92,7 @@ def verificar():
 @app.route("/webhook", methods=["POST"])
 def receber():
     dados = request.get_json(silent=True) or {}
+    print("EVENTO RECEBIDO:", str(dados)[:800], flush=True)
 
     for entrada in dados.get("entry", []):
         # 1) Mensagens enviadas para a página
@@ -110,16 +111,22 @@ def receber():
         for mudanca in entrada.get("changes", []):
             valor = mudanca.get("value", {})
             if mudanca.get("field") != "feed":
+                print("IGNORADO: campo", mudanca.get("field"), flush=True)
                 continue
             if valor.get("item") != "comment" or valor.get("verb") != "add":
+                print("IGNORADO: item/verb", valor.get("item"), valor.get("verb"), flush=True)
                 continue
             # ignora comentários feitos pela própria página
             if valor.get("from", {}).get("id") == entrada.get("id"):
+                print("IGNORADO: comentário feito pela própria página", flush=True)
                 continue
             if PALAVRA_GATILHO in valor.get("message", "").lower():
                 cid = valor["comment_id"]
+                print("COMENTÁRIO COM GATILHO:", cid, flush=True)
                 responder_comentario(cid, "Te enviei os detalhes na sua caixa de mensagens! 📩")
                 resposta_privada(cid, MSG_BOAS_VINDAS)
+            else:
+                print("IGNORADO: sem a palavra gatilho:", valor.get("message"), flush=True)
 
     return "ok", 200
 
